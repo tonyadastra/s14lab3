@@ -2,10 +2,10 @@ from flask import Flask, render_template, request, redirect, url_for
 from models.user import Db, User
 from modules.userform import UserForm, UserIDForm, UpdateUserForm
 import random
-from flask_heroku import Heroku
+# from flask_heroku import Heroku
 app = Flask(__name__)
-heroku = Heroku(app)
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://localhost/usersdb'
+# heroku = Heroku(app)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://localhost/usersdb'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = "s14a-key"
 Db.init_app(app)
@@ -93,6 +93,7 @@ def updateUser():
         else:
             return render_template('updateuser.html', form=form)
 
+
 @app.route('/deleteuser', methods=['GET', 'POST'])
 def deleteUser():
     form = UserIDForm()
@@ -144,7 +145,7 @@ def deleteUseridFromUrl(user_id):
 def mockDataGenerator():
     for i in range(1, random.randint(74, 704)):
         first_name = "NPC" + str(random.randint(2202, 18906416))
-        age = random.randint(1, 101)
+        age = 1000
         new_user = User(first_name=first_name, age=age)
         Db.session.add(new_user)
         Db.session.commit()
@@ -165,6 +166,13 @@ def mockDataGenerator():
     #         return redirect(url_for('index'))
     #     else:
     #         return render_template('adduser.html', form=form)
+
+@app.route('/deleteallnpcs')
+def deleteAllNPCs():
+    Db.session.query(User).filter_by(age=1000).delete()
+    Db.session.commit()
+    return redirect(url_for('index'))
+
 
 @app.route('/deleteallusers')
 def deleteAllUsers():
