@@ -1,0 +1,19 @@
+.jumbotron{
+   background-color: #53E6A1;
+   color: black;
+   padding: 2rem 1rem;
+   margin-bottom: 1.5rem;
+   border-radius: 0.3rem;
+}
+    .user-form-group input{
+    border-bottom: 3px solid orange;
+    margin: 0 0 0 3px;
+    padding: 3px;
+    }
+.red{
+   background-color: #D10000;
+   color: black;
+   padding: 2rem 1rem;
+   margin-bottom: 1.5rem;
+   border-radius: 0.3rem;
+}

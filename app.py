@@ -1,54 +1,177 @@
-from flask import Flask, render_template
-
+from flask import Flask, render_template, request, redirect, url_for
+from models.user import Db, User
+from modules.userform import UserForm, UserIDForm, UpdateUserForm
+import random
+from flask_heroku import Heroku
 app = Flask(__name__)
-import joblib as joblib
+heroku = Heroku(app)
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://localhost/usersdb'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.secret_key = "s14a-key"
+Db.init_app(app)
 
-features = [4, 2.5, 3000, 15, 17903.0, 1]
-beds = features[0]
-baths = features[1]
-Sqft = features[2]
-Age = features[3]
-Lotsize = features[4]
-Garage = features[5]
 
 @app.route('/')
 def index():
+    # Add Query
+    users = User.query.all()
+    # Iterate and print
+    for user in users:
+        User.toString(user)
 
-    return render_template('index.html', Beds=beds, Baths=baths, Sqft=Sqft,
-                           Age=Age, Lotsize=Lotsize, Garage=Garage)
+    return render_template("index.html", users=users)
 
-@app.route('/linear_regression')
-def linear_regression():
-    model = joblib.load('./notebooks/regr.pkl')
-    # Make prediction - features = ['BEDS', 'BATHS', 'SQFT', 'AGE', 'LOTSIZE', 'GARAGE']
-    prediction = model.predict([[4, 2.5, 3000, 15, 17903.0, 1]])[0][0].round(1)
-    prediction = str(prediction)
-    return render_template('index.html', price=prediction, Beds=beds, Baths=baths, Sqft=Sqft,
-                           Age=Age, Lotsize=Lotsize, Garage=Garage)
+@app.route('/random/demo')
+def randomPage():
+    # Add Query
+    users = User.query.all()
+    # Iterate and print
+    for user in users:
+        User.toString(user)
+    return render_template("random.html", users=users)
 
-@app.route('/train_test_split')
-def train_test_split():
-    model = joblib.load('./notebooks/train_test_split.pkl')
-    # Make prediction - features = ['BEDS', 'BATHS', 'SQFT', 'AGE', 'LOTSIZE', 'GARAGE']
-    prediction = model.predict([[4, 2.5, 3000, 15, 17903.0, 1]])[0][0].round(1)
-    prediction = str(prediction)
-    return render_template('index.html', price=prediction, Beds=beds, Baths=baths, Sqft=Sqft,
-                           Age=Age, Lotsize=Lotsize, Garage=Garage)
 
-@app.route('/decision_tree')
-def decision_tree():
-    model = joblib.load('./notebooks/decision_tree.pkl')
-    # Make prediction - features = ['BEDS', 'BATHS', 'SQFT', 'AGE', 'LOTSIZE', 'GARAGE']
-    prediction = model.predict([[4, 2.5, 3000, 15, 17903.0, 1]])[0].round(1)
-    prediction = str(prediction)
-    return render_template('index.html', price=prediction, Beds=beds, Baths=baths, Sqft=Sqft,
-                           Age=Age, Lotsize=Lotsize, Garage=Garage)
+@app.route('/readuser', methods=['GET', 'POST'])
+def readUser():
+    form = UserIDForm()
+    # If GET
+    if request.method == 'GET':
+        return render_template('userid.html', form=form)
+    # If POST
+    else:
+        if form.validate_on_submit():
+            user_id = request.form['user_id']
+            if Db.session.query(User).filter_by(user_id=user_id).scalar() is not None:
+                readuser = Db.session.query(User).filter_by(user_id=user_id)
+                # Iterate and print
+                for user in readuser:
+                    User.toString(user)
+                return render_template('readuser.html', user_id=user_id, readuser=readuser)
+            else:
+                return redirect(url_for('error'))
+        else:
+            return render_template('userid.html', form=form)
 
-@app.route('/random_forest')
-def random_forest():
-    model = joblib.load('./notebooks/random_forest.pkl')
-    # Make prediction - features = ['BEDS', 'BATHS', 'SQFT', 'AGE', 'LOTSIZE', 'GARAGE']
-    prediction = model.predict([[4, 2.5, 3000, 15, 17903.0, 1]])[0].round(1)
-    prediction = str(prediction)
-    return render_template('index.html', price=prediction, Beds=beds, Baths=baths, Sqft=Sqft,
-                           Age=Age, Lotsize=Lotsize, Garage=Garage)
+
+# @route /adduser - GET, POST
+@app.route('/adduser', methods=['GET', 'POST'])
+def addUser():
+    form = UserForm()
+    # If GET
+    if request.method == 'GET':
+        return render_template('adduser.html', form=form)
+    # If POST
+    else:
+        if form.validate_on_submit():
+            first_name = request.form['first_name']
+            age = request.form['age']
+            new_user = User(first_name=first_name, age=age)
+            Db.session.add(new_user)
+            Db.session.commit()
+            return redirect(url_for('index'))
+        else:
+            return render_template('adduser.html', form=form)
+
+@app.route('/updateuser', methods=['GET', 'POST'])
+def updateUser():
+    form = UpdateUserForm()
+    # If GET
+    if request.method == 'GET':
+        return render_template('updateuser.html', form=form)
+    # If POST
+    else:
+        if form.validate_on_submit():
+            user_id = request.form['user_id']
+            first_name = request.form['first_name']
+            age = request.form['age']
+            if Db.session.query(User).filter_by(user_id=user_id).scalar() is not None:
+                Db.session.query(User).filter_by(user_id=user_id).update({'first_name': first_name, 'age': age})
+                Db.session.commit()
+                return redirect(url_for('index'))
+            else:
+                return redirect(url_for('error'))
+        else:
+            return render_template('updateuser.html', form=form)
+
+@app.route('/deleteuser', methods=['GET', 'POST'])
+def deleteUser():
+    form = UserIDForm()
+    # If GET
+    if request.method == 'GET':
+        return render_template('deleteuser.html', form=form)
+    # If POST
+    else:
+        if form.validate_on_submit():
+            user_id = request.form['user_id']
+            if Db.session.query(User).filter_by(user_id=user_id).scalar() is not None:
+                Db.session.query(User).filter_by(user_id=user_id).delete()
+                Db.session.commit()
+                return redirect(url_for('index'))
+            else:
+                return redirect(url_for('error'))
+
+        else:
+            return render_template('deleteuser.html', form=form)
+
+
+# @route /adduser/<first_name>/<age>
+@app.route('/adduser/<first_name>/<age>')
+def addUserFromUrl(first_name, age):
+    Db.session.add(User(first_name=first_name, age=age))
+    Db.session.commit()
+    return redirect(url_for('index'))
+
+
+@app.route('/deleteuser/<first_name>/')
+def deleteUserFromUrl(first_name):
+    Db.session.query(User).filter_by(first_name=first_name).delete()
+    Db.session.commit()
+    return redirect(url_for('index'))
+
+@app.route('/deleteuser/id/<user_id>/')
+def deleteUseridFromUrl(user_id):
+    Db.session.query(User).filter_by(user_id=user_id).delete()
+    Db.session.commit()
+    return redirect(url_for('index'))
+
+# @app.route('/updateuser/<first_name>/<age>')
+# def updatdeUserFromUrl(first_name, age):
+#     Db.session.query(User).filter_by(first_name=first_name).update({"age": age})
+#     Db.session.commit()
+#     return redirect(url_for('index'))
+
+@app.route('/random')
+def mockDataGenerator():
+    for i in range(1, random.randint(74, 704)):
+        first_name = "NPC" + str(random.randint(2202, 18906416))
+        age = random.randint(1, 101)
+        new_user = User(first_name=first_name, age=age)
+        Db.session.add(new_user)
+        Db.session.commit()
+    return redirect(url_for('randomPage'))
+    # return render_template('random.html')
+    # form = UserForm()
+    # # If GET
+    # if request.method == 'GET':
+    #     return render_template('adduser.html', form=form)
+    # # If POST
+    # else:
+    #     if form.validate_on_submit():
+    #         first_name = request.form['first_name']
+    #         age = request.form['age']
+    #         new_user = User(first_name=first_name, age=age)
+    #         Db.session.add(new_user)
+    #         Db.session.commit()
+    #         return redirect(url_for('index'))
+    #     else:
+    #         return render_template('adduser.html', form=form)
+
+@app.route('/deleteallusers')
+def deleteAllUsers():
+    Db.session.query(User).delete()
+    Db.session.commit()
+    return redirect(url_for('index'))
+
+@app.route('/error')
+def error():
+    return render_template('usernotfound.html')
