@@ -24,15 +24,6 @@ def index():
 
     return render_template("index.html", users=users)
 
-@app.route('/random/demo')
-def randomPage():
-    # Add Query
-    users = User.query.all()
-    # Iterate and print
-    for user in users:
-        User.toString(user)
-    return render_template("random.html", users=users)
-
 
 @app.route('/readuser', methods=['GET', 'POST'])
 def readUser():
