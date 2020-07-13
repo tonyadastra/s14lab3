@@ -1,4 +1,4 @@
-## CSCI HW2 / Lab 3
+## CSCI S-14A HW2 / Lab 3
 
 Heroku link: https://mighty-depths-12304.herokuapp.com/
 

@@ -66,6 +66,7 @@ def addUser():
         else:
             return render_template('adduser.html', form=form)
 
+
 @app.route('/updateuser', methods=['GET', 'POST'])
 def updateUser():
     form = UpdateUserForm()
